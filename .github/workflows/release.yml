@@ -1,0 +1,99 @@
+name: Build and release pgit cli
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        include:
+          - os: linux
+            arch: amd64
+          - os: linux
+            arch: arm64
+          - os: darwin
+            arch: amd64
+          - os: darwin
+            arch: arm64
+          - os: windows
+            arch: amd64
+          - os: windows
+            arch: arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23.5"
+          cache: true
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Build cross-platform binary
+        env:
+          GOOS: ${{ matrix.os }}
+          GOARCH: ${{ matrix.arch }}
+          VERSION: ${{ steps.version.outputs.VERSION }}
+        run: |
+          mkdir -p bin
+          binary_name="pgit"
+          if [ "${{ matrix.os }}" = "windows" ]; then
+            binary_name="pgit.exe"
+          fi
+          go build -ldflags "-X 'main.Version=${VERSION}'" -o "bin/${binary_name}" .
+
+      - name: Archive binary
+        run: |
+          cd bin
+          binary_name="pgit"
+          archive_name="pgit-${{ steps.version.outputs.VERSION }}-${{ matrix.os }}-${{ matrix.arch }}"
+          
+          if [ "${{ matrix.os }}" = "windows" ]; then
+            binary_name="pgit.exe"
+            zip "../${archive_name}.zip" "${binary_name}"
+          else
+            tar -czf "../${archive_name}.tar.gz" "${binary_name}"
+          fi
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pgit-${{ matrix.os }}-${{ matrix.arch }}
+          path: |
+            *.zip
+            *.tar.gz
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "pgit-*"
+          tag: ${{ github.ref_name }}
+          name: "Release ${{ github.ref_name }}"
+          generateReleaseNotes: true
+          draft: false
+          prerelease: false
