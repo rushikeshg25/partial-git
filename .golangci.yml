@@ -1,5 +1,4 @@
 # yaml-language-server: $schema=https://golangci-lint.run/jsonschema/golangci.jsonschema.json
-version: "2"
 
 run:
   timeout: 5m
@@ -58,6 +57,23 @@ linters:
     - usestdlibvars
     - usetesting
     - whitespace
+  settings:
+    gofmt:
+      simplify: true
+    goimports:
+      local-prefixes:
+        - partial-git
+    govet:
+      enable-all: true
+    staticcheck:
+      checks: ["all"]
+    gosec:
+      excludes:
+        - G204  # Subprocess launched with variable (common in CLI tools)
+    revive:
+      rules:
+        - name: exported
+          arguments: [true]
 
 issues:
   max-issues-per-linter: 0
