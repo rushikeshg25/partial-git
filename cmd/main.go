@@ -14,7 +14,3 @@ func Execute() error {
 	rootCmd.AddCommand(versionCmd())
 	return rootCmd.Execute()
 }
-
-func GetVersion() string {
-	return "unknown"
-}

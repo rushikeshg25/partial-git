@@ -11,5 +11,11 @@ build:
 run: build
 	./bin/$(APP_NAME)
 
+version:
+	@echo "Current version: $(VERSION)"
+
+lint:
+	golangci-lint run
+
 clean:
 	rm -rf bin
