@@ -1,11 +1,12 @@
 # yaml-language-server: $schema=https://golangci-lint.run/jsonschema/golangci.jsonschema.json
-
 version: "2"
+
 run:
+  timeout: 5m
+  go: "1.23.5"
   allow-parallel-runners: true
 
 linters:
-  default: none
   enable:
     - asasalint
     - bidichk
@@ -23,8 +24,11 @@ linters:
     - gocheckcompilerdirectives
     - gocognit
     - gocritic
+    - gofmt
+    - goimports
     - goprintffuncname
     - gosec
+    - gosimple
     - govet
     - grouper
     - inamedparam
@@ -32,6 +36,7 @@ linters:
     - intrange
     - makezero
     - mirror
+    - misspell
     - musttag
     - nakedret
     - nilerr
@@ -46,6 +51,7 @@ linters:
     - testableexamples
     - testifylint
     - tparallel
+    - typecheck
     - unconvert
     - unparam
     - unused
@@ -53,28 +59,6 @@ linters:
     - usetesting
     - whitespace
 
-  settings:
-    govet:
-      enable-all: true
-
-  exclusions:
-    generated: lax
-    presets:
-      - comments
-      - common-false-positives
-      - legacy
-      - std-error-handling
-    rules:
-      - linters:
-          - govet
-        path: (.+)_test.go
-        text: fieldalignment
-    paths:
-      - third_party$
-      - builtin$
-      - examples$
-
-formatters:
-  enable:
-    - gofmt
-    - gofumpt
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
