@@ -14,8 +14,5 @@ run: build
 version:
 	@echo "Current version: $(VERSION)"
 
-lint:
-	golangci-lint run
-
 clean:
 	rm -rf bin
