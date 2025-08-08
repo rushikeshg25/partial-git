@@ -1,9 +1,13 @@
 package internal
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
+	"partial-git/internal/repository"
 	"partial-git/internal/token"
+	"time"
 )
 
 type Flags struct {
@@ -16,71 +20,124 @@ type Flags struct {
 func Run(flags Flags, args []string) {
 	tokenManager := token.NewManager()
 
-	if flags.Set != "" {
+	switch {
+	case flags.Set != "":
 		if err := tokenManager.SetToken(flags.Set); err != nil {
 			fmt.Fprintf(os.Stderr, "Error setting GitHub token: %v\n", err)
 			os.Exit(1)
 		}
 		fmt.Printf("Storage backend: %s\n", tokenManager.GetStorageInfo())
 		return
-	}
 
-	if flags.Unset {
+	case flags.Unset:
 		if err := tokenManager.DeleteToken(); err != nil {
 			fmt.Fprintf(os.Stderr, "Error deleting GitHub token: %v\n", err)
 			os.Exit(1)
 		}
 		return
-	}
 
-	// Perform runtime validations for other operations
-	if err := validateRuntimeConditions(flags, tokenManager); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
-	}
-
-	// Handle auth and check operations
-	if flags.Auth {
+	case flags.Auth:
+		if err := validateRuntimeConditions(flags, tokenManager, nil); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
 		showAuthInfo(tokenManager)
 		return
-	}
 
-	if flags.Check {
+	case flags.Check:
+		if err := validateRuntimeConditions(flags, tokenManager, nil); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
 		checkTokenStatus(tokenManager)
 		return
+
+	default:
+		start := time.Now()
+		githubURL, err := parseGitHubURL(args[0])
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error parsing GitHub URL: %v\n", err)
+			os.Exit(1)
+		}
+
+		if err := validateRuntimeConditions(flags, tokenManager, githubURL); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+
+		if err := githubURL.Download(); err != nil {
+			fmt.Fprintf(os.Stderr, "Error downloading repository: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Println("Download Completed")
+		fmt.Println(time.Since(start))
 	}
-
-	// Default behavior - show input summary (for download operations)
-	fmt.Println("=== User Input Summary ===")
-
-	// Print command line arguments
-	if len(args) > 0 {
-		fmt.Printf("Arguments: %v\n", args)
-	} else {
-		fmt.Println("Arguments: none")
-	}
-
-	fmt.Printf("Set flag: %q\n", flags.Set)
-	fmt.Printf("Auth flag: %t\n", flags.Auth)
-	fmt.Printf("Check flag: %t\n", flags.Check)
-	fmt.Printf("Unset flag: %t\n", flags.Unset)
-
-	fmt.Println("========================")
 }
 
-// validateRuntimeConditions performs additional runtime validations
-func validateRuntimeConditions(flags Flags, tokenManager *token.Manager) error {
-	// Check if GitHub token exists for operations that require it
+func parseGitHubURL(urlStr string) (*repository.GitHubURL, error) {
+	githubURL, err := repository.ParseGitHubURL(urlStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid GitHub URL '%s': %w", urlStr, err)
+	}
+	return githubURL, nil
+}
+
+func validateRuntimeConditions(flags Flags, tokenManager *token.Manager, githubURL *repository.GitHubURL) error {
 	if flags.Auth || flags.Check {
 		if !tokenManager.TokenExists() {
 			return fmt.Errorf("GitHub token not found. Use --set to configure it first")
+		}
+		return nil
+	}
+
+	if githubURL != nil {
+		isPrivate, err := isRepositoryPrivate(githubURL)
+		if err != nil {
+			fmt.Printf("Warning: Could not determine repository visibility: %v\n", err)
+			fmt.Println("Assuming repository might be private...")
+			if !tokenManager.TokenExists() {
+				return fmt.Errorf("GitHub token not found. Repository might be private. Use --set to configure a token")
+			}
+		} else if isPrivate {
+			if !tokenManager.TokenExists() {
+				return fmt.Errorf("GitHub token required for private repository. Use --set to configure a token")
+			}
 		}
 	}
 
 	return nil
 }
 
-// showAuthInfo displays information about the authenticated user
+func isRepositoryPrivate(githubURL *repository.GitHubURL) (bool, error) {
+	resp, err := http.Get(githubURL.GetAPIURL())
+	if err != nil {
+		return false, fmt.Errorf("failed to check repository: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return true, nil
+	}
+
+	if resp.StatusCode == http.StatusForbidden {
+		return true, nil
+	}
+
+	if resp.StatusCode == http.StatusOK {
+		var repoInfo struct {
+			Private bool `json:"private"`
+		}
+
+		if err := json.NewDecoder(resp.Body).Decode(&repoInfo); err != nil {
+			return false, fmt.Errorf("failed to parse repository info: %w", err)
+		}
+
+		return repoInfo.Private, nil
+	}
+
+	return true, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+}
+
 func showAuthInfo(tokenManager *token.Manager) {
 	storedToken, err := tokenManager.GetToken()
 	if err != nil {
