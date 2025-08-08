@@ -1,17 +1,41 @@
 package main
 
 import (
-	"log"
+	"context"
+	"os"
+	"os/signal"
 	"partial-git/cmd"
+	"syscall"
 )
 
 var Version = "PLACEHOLDER"
 
-func main() {
-	// Set the version in the cmd package
-	cmd.Version = Version
+func run() int {
+	ctx, cancel := context.WithCancel(context.Background())
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
-	if err := cmd.Execute(); err != nil {
-		log.Fatal(err)
+	defer func() {
+		signal.Stop(c)
+		cancel()
+	}()
+
+	go func() {
+		select {
+		case <-c:
+			cancel()
+		case <-ctx.Done():
+		}
+		<-c
+		os.Exit(1)
+	}()
+
+	if err := cmd.Execute(ctx); err != nil {
+		return 1
 	}
+	return 0
+}
+
+func main() {
+	os.Exit(run())
 }

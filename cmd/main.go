@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"partial-git/internal"
 	"partial-git/internal/token"
@@ -13,11 +14,15 @@ var f flags
 var rootCmd = &cobra.Command{
 	Use:   "pgit <github-url>",
 	Short: "Download files or folders from a repo",
-	Args:  cobra.MaximumNArgs(1),
-	PreRunE: func(cmd *cobra.Command, args []string) error {
-		return validateFlags(args)
-	},
+	Args:  cobra.ArbitraryArgs,
 	Run: func(cmd *cobra.Command, args []string) {
+		ctx := cmd.Context()
+
+		if err := validateFlags(args); err != nil {
+			fmt.Printf("Error: %v\n", err)
+			return
+		}
+
 		internalFlags := internal.Flags{
 			Set:   f.Set,
 			Auth:  f.Auth,
@@ -25,7 +30,7 @@ var rootCmd = &cobra.Command{
 			Unset: f.Unset,
 		}
 
-		internal.Run(internalFlags, args)
+		internal.Run(ctx, internalFlags, args)
 	},
 }
 
@@ -75,8 +80,8 @@ func validateFlags(args []string) error {
 	}
 }
 
-func Execute() error {
+func Execute(ctx context.Context) error {
 	cmdFlags(rootCmd, &f)
 	rootCmd.AddCommand(versionCmd())
-	return rootCmd.Execute()
+	return rootCmd.ExecuteContext(ctx)
 }

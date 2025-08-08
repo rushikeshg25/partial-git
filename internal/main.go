@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -17,7 +18,7 @@ type Flags struct {
 	Unset bool
 }
 
-func Run(flags Flags, args []string) {
+func Run(ctx context.Context, flags Flags, args []string) {
 	tokenManager := token.NewManager()
 
 	switch {
@@ -37,19 +38,19 @@ func Run(flags Flags, args []string) {
 		return
 
 	case flags.Auth:
-		if err := validateRuntimeConditions(flags, tokenManager, nil); err != nil {
+		if err := validateRuntimeConditions(ctx, flags, tokenManager, nil); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
-		showAuthInfo(tokenManager)
+		showAuthInfo(ctx, tokenManager)
 		return
 
 	case flags.Check:
-		if err := validateRuntimeConditions(flags, tokenManager, nil); err != nil {
+		if err := validateRuntimeConditions(ctx, flags, tokenManager, nil); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
-		checkTokenStatus(tokenManager)
+		checkTokenStatus(ctx, tokenManager)
 		return
 
 	default:
@@ -60,13 +61,24 @@ func Run(flags Flags, args []string) {
 			os.Exit(1)
 		}
 
-		if err := validateRuntimeConditions(flags, tokenManager, githubURL); err != nil {
+		if err := validateRuntimeConditions(ctx, flags, tokenManager, githubURL); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
 
-		if err := githubURL.Download(); err != nil {
-			fmt.Fprintf(os.Stderr, "Error downloading repository: %v\n", err)
+		// Create a timeout context for download operations (60 seconds)
+		downloadCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
+		defer cancel()
+
+		fmt.Println("Starting download (timeout: 60 seconds)...")
+		if err := githubURL.Download(downloadCtx); err != nil {
+			if downloadCtx.Err() == context.DeadlineExceeded {
+				fmt.Fprintf(os.Stderr, "Error: Download timed out after 60 seconds\n")
+			} else if downloadCtx.Err() == context.Canceled {
+				fmt.Fprintf(os.Stderr, "Error: Download was cancelled\n")
+			} else {
+				fmt.Fprintf(os.Stderr, "Error downloading repository: %v\n", err)
+			}
 			os.Exit(1)
 		}
 		fmt.Println("Download Completed")
@@ -82,7 +94,7 @@ func parseGitHubURL(urlStr string) (*repository.GitHubURL, error) {
 	return githubURL, nil
 }
 
-func validateRuntimeConditions(flags Flags, tokenManager *token.Manager, githubURL *repository.GitHubURL) error {
+func validateRuntimeConditions(ctx context.Context, flags Flags, tokenManager *token.Manager, githubURL *repository.GitHubURL) error {
 	if flags.Auth || flags.Check {
 		if !tokenManager.TokenExists() {
 			return fmt.Errorf("GitHub token not found. Use --set to configure it first")
@@ -91,7 +103,7 @@ func validateRuntimeConditions(flags Flags, tokenManager *token.Manager, githubU
 	}
 
 	if githubURL != nil {
-		isPrivate, err := isRepositoryPrivate(githubURL)
+		isPrivate, err := isRepositoryPrivate(ctx, githubURL)
 		if err != nil {
 			fmt.Printf("Warning: Could not determine repository visibility: %v\n", err)
 			fmt.Println("Assuming repository might be private...")
@@ -108,8 +120,13 @@ func validateRuntimeConditions(flags Flags, tokenManager *token.Manager, githubU
 	return nil
 }
 
-func isRepositoryPrivate(githubURL *repository.GitHubURL) (bool, error) {
-	resp, err := http.Get(githubURL.GetAPIURL())
+func isRepositoryPrivate(ctx context.Context, githubURL *repository.GitHubURL) (bool, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", githubURL.GetAPIURL(), nil)
+	if err != nil {
+		return false, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return false, fmt.Errorf("failed to check repository: %w", err)
 	}
@@ -138,7 +155,14 @@ func isRepositoryPrivate(githubURL *repository.GitHubURL) (bool, error) {
 	return true, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 }
 
-func showAuthInfo(tokenManager *token.Manager) {
+func showAuthInfo(ctx context.Context, tokenManager *token.Manager) {
+	select {
+	case <-ctx.Done():
+		fmt.Println("Operation cancelled")
+		return
+	default:
+	}
+
 	storedToken, err := tokenManager.GetToken()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error retrieving token: %v\n", err)
@@ -148,11 +172,19 @@ func showAuthInfo(tokenManager *token.Manager) {
 	fmt.Printf("GitHub token found (storage: %s)\n", tokenManager.GetStorageInfo())
 	fmt.Printf("Token prefix: %s***\n", storedToken[:8])
 	fmt.Println("Note: Use this token to authenticate with GitHub API")
-	// TODO: Add actual GitHub API call to get user info
+	// TODO: Add actual GitHub API call to get user info with context
 }
 
 // checkTokenStatus checks the token status and GitHub API rate limits
-func checkTokenStatus(tokenManager *token.Manager) {
+func checkTokenStatus(ctx context.Context, tokenManager *token.Manager) {
+	// Check for cancellation
+	select {
+	case <-ctx.Done():
+		fmt.Println("Operation cancelled")
+		return
+	default:
+	}
+
 	if !tokenManager.TokenExists() {
 		fmt.Println("No GitHub token configured")
 		fmt.Println("Use --set to configure a Personal Access Token")
@@ -168,5 +200,5 @@ func checkTokenStatus(tokenManager *token.Manager) {
 	fmt.Printf("✓ GitHub token found (storage: %s)\n", tokenManager.GetStorageInfo())
 	fmt.Printf("✓ Token format valid (prefix: %s***)\n", storedToken[:8])
 	fmt.Println("✓ Token ready for GitHub API calls")
-	// TODO: Add actual GitHub API call to check rate limits
+	// TODO: Add actual GitHub API call to check rate limits with context
 }

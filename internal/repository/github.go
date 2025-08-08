@@ -1,22 +1,24 @@
 package repository
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"regexp"
 	"strings"
+	"sync"
+	"time"
 )
 
-// GitHubURL represents a parsed GitHub repository URL
 type GitHubURL struct {
 	Owner      string
 	Repository string
-	Path       string // Optional path within the repository
-	Branch     string // Optional branch/ref
-	RawURL     string // Original URL string
+	Path       string
+	Branch     string
+	RawURL     string
 }
 
-// ParseGitHubURL parses and validates a GitHub URL
 func ParseGitHubURL(urlStr string) (*GitHubURL, error) {
 	if urlStr == "" {
 		return nil, fmt.Errorf("URL cannot be empty")
@@ -27,12 +29,10 @@ func ParseGitHubURL(urlStr string) (*GitHubURL, error) {
 		return nil, fmt.Errorf("invalid URL format: %w", err)
 	}
 
-	// Validate GitHub domain
 	if parsedURL.Host != "github.com" && parsedURL.Host != "www.github.com" {
 		return nil, fmt.Errorf("URL must be from github.com")
 	}
 
-	// Validate scheme
 	if parsedURL.Scheme == "" {
 		return nil, fmt.Errorf("URL must include scheme (https://)")
 	}
@@ -41,18 +41,15 @@ func ParseGitHubURL(urlStr string) (*GitHubURL, error) {
 		return nil, fmt.Errorf("URL scheme must be http or https")
 	}
 
-	// Parse path components
 	pathParts := strings.Split(strings.Trim(parsedURL.Path, "/"), "/")
 	if len(pathParts) < 2 {
 		return nil, fmt.Errorf("GitHub URL must include owner and repository (e.g., https://github.com/owner/repo)")
 	}
 
-	// Validate owner and repository names
 	if pathParts[0] == "" || pathParts[1] == "" {
 		return nil, fmt.Errorf("GitHub URL must include valid owner and repository names")
 	}
 
-	// GitHub username/org and repo name validation
 	nameRegex := regexp.MustCompile(`^[a-zA-Z0-9]([a-zA-Z0-9\-_])*[a-zA-Z0-9]$|^[a-zA-Z0-9]$`)
 	if !nameRegex.MatchString(pathParts[0]) {
 		return nil, fmt.Errorf("invalid GitHub owner name: %s", pathParts[0])
@@ -67,7 +64,6 @@ func ParseGitHubURL(urlStr string) (*GitHubURL, error) {
 		RawURL:     urlStr,
 	}
 
-	// Parse additional path components (for file/folder paths)
 	if len(pathParts) > 2 {
 		// Handle different GitHub URL patterns:
 		// /owner/repo/tree/branch/path/to/file
@@ -89,21 +85,41 @@ func ParseGitHubURL(urlStr string) (*GitHubURL, error) {
 	return githubURL, nil
 }
 
-// String returns a string representation of the GitHub URL
-func (g *GitHubURL) String() string {
-	return fmt.Sprintf("%s/%s", g.Owner, g.Repository)
-}
-
 // GetAPIURL returns the GitHub API URL for this repository
 func (g *GitHubURL) GetAPIURL() string {
 	return fmt.Sprintf("https://api.github.com/repos/%s/%s", g.Owner, g.Repository)
 }
 
-// GetCloneURL returns the HTTPS clone URL for this repository
-func (g *GitHubURL) GetCloneURL() string {
-	return fmt.Sprintf("https://github.com/%s/%s.git", g.Owner, g.Repository)
+func (g *GitHubURL) Download(ctx context.Context) error {
+	wg := sync.WaitGroup{}
+	errChan := make(chan error, 1)
+	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
+
+	wg.Add(1)
+	go g.getRepoContent(ctx, wg, errChan)
+
+	go func() {
+		defer func() {
+			wg.Wait()
+			close(errChan)
+		}()
+	}()
+
+	select {
+	case err := <-errChan:
+		if err != nil {
+			return fmt.Errorf("failed to download: %w", err)
+		}
+	case <-ctx.Done():
+		if errors.Is(ctx.Err(), context.Canceled) {
+			return context.Canceled
+		}
+		return errors.New("Timeout")
+	}
+
+	return nil
 }
 
-func (g *GitHubURL) Download() error {
-	return nil
+func (g *GitHubURL) getRepoContent(ctx *context.Context, wg *sync.WaitGroup, erchan chan error) error {
 }
