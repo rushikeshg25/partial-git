@@ -10,8 +10,8 @@ type flags struct {
 }
 
 func cmdFlags(c *cobra.Command, f *flags) {
-	c.Flags().StringVarP(&f.Set, "set", "s", "", "set github token into os environment variable (e.g., gitty -s=your_github_token)")
-	c.Flags().BoolVarP(&f.Auth, "auth", "a", false, "print authenticated username")
-	c.Flags().BoolVarP(&f.Check, "check", "c", false, "check client status and remaining rate limit")
-	c.Flags().BoolVarP(&f.Unset, "unset", "u", false, "unset github token from os environment variable")
+	c.Flags().StringVarP(&f.Set, "set", "s", "", "store GitHub Personal Access Token in shell profile")
+	c.Flags().BoolVarP(&f.Auth, "auth", "a", false, "show authenticated user information")
+	c.Flags().BoolVarP(&f.Check, "check", "c", false, "check token status and availability")
+	c.Flags().BoolVarP(&f.Unset, "unset", "u", false, "remove GitHub token from shell profile")
 }
