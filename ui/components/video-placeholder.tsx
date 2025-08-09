@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 
 export default function VideoPlaceholder({
   title = "See pgit in action",
-  subtitle = "Quick 60-second overview (placeholder)",
+  subtitle = "Quick overview",
   cta = "Watch preview",
   className = "",
   videoSrc = null,
@@ -52,7 +52,7 @@ export default function VideoPlaceholder({
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="relative">
                 <span
-                  className="absolute inset-0 -z-10 m-auto inline-flex h-14 w-14 animate-ping rounded-full bg-emerald-500/40"
+                  className="absolute inset-0 -z-10 m-auto inline-flex h-12 w-12 sm:h-14 sm:w-14 animate-ping rounded-full bg-emerald-500/40"
                   aria-hidden="true"
                 />
                 <Dialog open={open} onOpenChange={setOpen}>
@@ -63,11 +63,12 @@ export default function VideoPlaceholder({
                       aria-label={`${cta} - Opens video dialog for ${title}`}
                     >
                       <Play className="h-4 w-4" aria-hidden="true" />
-                      {cta}
+                      <span className="hidden sm:inline">{cta}</span>
+                      <span className="sm:hidden">Play</span>
                     </Button>
                   </DialogTrigger>
                   <DialogContent
-                    className="max-w-4xl"
+                    className="max-w-[95vw] sm:max-w-2xl md:max-w-3xl lg:max-w-4xl"
                     aria-describedby="video-description"
                   >
                     <DialogHeader>

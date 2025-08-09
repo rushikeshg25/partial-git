@@ -19,7 +19,7 @@ export default function Hero({
           >
             New
           </Badge>
-          <span>{"Selective GitHub downloads"}</span>
+          <span>{"Selective File/Folder Download"}</span>
         </div>
         <h1 className="mt-4 text-4xl font-bold tracking-tight md:text-5xl">
           <span className="bg-gradient-to-r from-neutral-900 to-emerald-600 bg-clip-text text-transparent dark:from-white dark:to-emerald-400">

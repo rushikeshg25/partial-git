@@ -61,7 +61,7 @@ pgit https://github.com/facebook/react/blob/main/package.json`;
         aria-hidden="true"
       >
         <div className="absolute inset-0 bg-gradient-to-b from-white via-white to-neutral-50 dark:from-neutral-950 dark:via-neutral-950 dark:to-black" />
-        <div className="absolute left-1/2 top-[-10%] size-[700px] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.15),rgba(255,255,255,0))] dark:bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.12),rgba(0,0,0,0))] animate-pulse" />
+        <div className="absolute left-1/2 top-[-10%] size-[300px] sm:size-[500px] md:size-[600px] lg:size-[700px] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.15),rgba(255,255,255,0))] dark:bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.12),rgba(0,0,0,0))] animate-pulse" />
       </div>
 
       {/* Navbar */}
@@ -81,7 +81,7 @@ pgit https://github.com/facebook/react/blob/main/package.json`;
               <FileDown className="h-4 w-4" />
             </div>
             <span>pgit</span>
-            <Badge variant="secondary" className="ml-1">
+            <Badge variant="secondary" className="ml-1 hidden sm:inline-flex">
               partial-git
             </Badge>
           </Link>
@@ -122,7 +122,7 @@ pgit https://github.com/facebook/react/blob/main/package.json`;
       {/* Single video placeholder: half visible over the hero, full visible on scroll */}
       <section
         id="video"
-        className="relative mx-auto -mt-20 max-w-6xl px-4 md:mt-8"
+        className="relative mx-auto -mt-20 max-w-4xl px-4 md:mt-8 mt-1"
       >
         <div className="relative">
           <VideoPlaceholder
@@ -316,13 +316,13 @@ pgit https://github.com/facebook/react/blob/main/package.json`;
       </section>
 
       <footer className="border-t" role="contentinfo">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-6 text-sm text-neutral-600 dark:text-neutral-400">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-4 py-6 text-sm text-neutral-600 dark:text-neutral-400 sm:flex-row sm:justify-between sm:gap-0">
           <div className="flex items-center gap-2">
             <HardDrive className="h-4 w-4" aria-hidden="true" />
             <span>pgit — partial-git</span>
           </div>
           <nav
-            className="flex items-center gap-3"
+            className="flex flex-wrap items-center justify-center gap-3 sm:justify-end"
             aria-label="Footer navigation"
           >
             <a
