@@ -58,7 +58,7 @@ jobs:
           go build -ldflags="-s -w" -o dist/pgit_${{ matrix.os }}_${{ matrix.arch }}${{ matrix.ext }} .
 
       - name: Upload binary as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: pgit_${{ matrix.os }}_${{ matrix.arch }}
           path: dist/pgit_${{ matrix.os }}_${{ matrix.arch }}${{ matrix.ext }}
@@ -73,7 +73,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: dist
 
