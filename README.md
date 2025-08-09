@@ -1,4 +1,4 @@
-# pget - Partial Git Clone Tool
+# pgit
 
 A fast, concurrent GitHub repository downloader that lets you download specific files, directories, or entire repositories without cloning the full git history.
 
@@ -30,8 +30,8 @@ wget -qO- https://raw.githubusercontent.com/rushikeshg25/partial-git/main/script
 ### Manual Installation
 
 1. Download the latest binary for your platform from [Releases](https://github.com/rushikeshg25/partial-git/releases)
-2. Make it executable: `chmod +x pget`
-3. Move to your PATH: `sudo mv pget /usr/local/bin/`
+2. Make it executable: `chmod +x pgit`
+3. Move to your PATH: `sudo mv pgit /usr/local/bin/`
 
 ### Supported Platforms
 
@@ -45,16 +45,16 @@ wget -qO- https://raw.githubusercontent.com/rushikeshg25/partial-git/main/script
 
 ```bash
 # Download entire repository
-pget https://github.com/user/repo
+pgit https://github.com/user/repo
 
 # Download specific directory
-pget https://github.com/user/repo/tree/main/src
+pgit https://github.com/user/repo/tree/main/src
 
 # Download specific file
-pget https://github.com/user/repo/blob/main/README.md
+pgit https://github.com/user/repo/blob/main/README.md
 
 # Download from specific branch
-pget https://github.com/user/repo/tree/develop
+pgit https://github.com/user/repo/tree/develop
 ```
 
 ### GitHub Token Setup
@@ -63,29 +63,29 @@ For private repositories or higher rate limits:
 
 ```bash
 # Set your GitHub Personal Access Token
-pget --set your_github_token_here
+pgit --set your_github_token_here
 
 # Check token status
-pget --check
+pgit --check
 
 # View authenticated user info
-pget --auth
+pgit --auth
 
 # Remove token
-pget --unset
+pgit --unset
 ```
 
 ### Examples
 
 ```bash
 # Download VS Code's common utilities
-pget https://github.com/microsoft/vscode/tree/main/src/vs/base/common
+pgit https://github.com/microsoft/vscode/tree/main/src/vs/base/common
 
 # Download React's source code
-pget https://github.com/facebook/react/tree/main/packages/react/src
+pgit https://github.com/facebook/react/tree/main/packages/react/src
 
 # Download a specific config file
-pget https://github.com/vercel/next.js/blob/canary/packages/next/package.json
+pgit https://github.com/vercel/next.js/blob/canary/packages/next/package.json
 ```
 
 ## How It Works
@@ -113,7 +113,7 @@ Tokens are stored in your shell profile (`~/.zshrc` or `~/.bashrc`) for persiste
 ```bash
 git clone https://github.com/rushikeshg25/partial-git.git
 cd partial-git
-go build -o pget .
+go build -o pgit .
 ```
 
 ### Running Tests

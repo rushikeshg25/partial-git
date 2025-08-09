@@ -94,7 +94,6 @@ func (m *Manager) GetStorageInfo() string {
 	return "Shell Profile (zsh/bash)"
 }
 
-// ValidateToken validates a GitHub PAT without storing it
 func ValidateToken(token string) error {
 	manager := NewManager()
 	return manager.validateToken(token)

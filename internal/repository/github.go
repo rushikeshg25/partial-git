@@ -2,20 +2,19 @@ package repository
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/url"
 	"regexp"
 	"strings"
-	"sync"
-	"time"
+
+	"github.com/google/go-github/v57/github"
 )
 
 type GitHubURL struct {
 	Owner      string
 	Repository string
-	Path       string
-	Branch     string
+	Path       string // path within the repository
+	Branch     string // branch/ref
 	RawURL     string
 }
 
@@ -85,41 +84,45 @@ func ParseGitHubURL(urlStr string) (*GitHubURL, error) {
 	return githubURL, nil
 }
 
-// GetAPIURL returns the GitHub API URL for this repository
+func (g *GitHubURL) String() string {
+	return fmt.Sprintf("%s/%s", g.Owner, g.Repository)
+}
+
 func (g *GitHubURL) GetAPIURL() string {
 	return fmt.Sprintf("https://api.github.com/repos/%s/%s", g.Owner, g.Repository)
 }
 
-func (g *GitHubURL) Download(ctx context.Context) error {
-	wg := sync.WaitGroup{}
-	errChan := make(chan error, 1)
-	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
-	defer cancel()
-
-	wg.Add(1)
-	go g.getRepoContent(ctx, wg, errChan)
-
-	go func() {
-		defer func() {
-			wg.Wait()
-			close(errChan)
-		}()
-	}()
-
-	select {
-	case err := <-errChan:
-		if err != nil {
-			return fmt.Errorf("failed to download: %w", err)
-		}
-	case <-ctx.Done():
-		if errors.Is(ctx.Err(), context.Canceled) {
-			return context.Canceled
-		}
-		return errors.New("Timeout")
-	}
-
-	return nil
+func (g *GitHubURL) GetCloneURL() string {
+	return fmt.Sprintf("https://github.com/%s/%s.git", g.Owner, g.Repository)
 }
 
-func (g *GitHubURL) getRepoContent(ctx *context.Context, wg *sync.WaitGroup, erchan chan error) error {
+func (g *GitHubURL) Download(ctx context.Context) error {
+	return g.DownloadWithOptions(ctx, false)
+}
+
+func (g *GitHubURL) DownloadWithOptions(ctx context.Context, quiet bool) error {
+	client := NewGitHubClient()
+	downloader := NewDownloaderWithOptions(client, g.Owner, g.Repository, g.Path, g.Branch, quiet)
+	return downloader.Download(ctx)
+}
+
+func (g *GitHubURL) IsPrivate(ctx context.Context) (bool, error) {
+	client := NewGitHubClient()
+	repo, err := client.GetRepository(ctx, g.Owner, g.Repository)
+	if err != nil {
+		// assume it might be private or doesn't exist
+		return true, err
+	}
+
+	return repo.GetPrivate(), nil
+}
+
+func (g *GitHubURL) GetRateLimit(ctx context.Context) (*github.RateLimits, error) {
+	client := NewGitHubClient()
+	return client.GetRateLimit(ctx)
+}
+
+func (g *GitHubURL) GetAuthenticatedUser(ctx context.Context) (*github.User, error) {
+	client := NewGitHubClient()
+	return client.GetAuthenticatedUser(ctx)
 }

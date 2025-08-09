@@ -2,12 +2,12 @@
 
 set -e
 
-# pget installer script
+# pgit installer script
 # Usage: curl -fsSL https://raw.githubusercontent.com/rushikeshg25/partial-git/main/scripts/install.sh | bash
 # or:    wget -qO- https://raw.githubusercontent.com/rushikeshg25/partial-git/main/scripts/install.sh | bash
 
 REPO="rushikeshg25/partial-git"  # Replace with your GitHub username/repo
-BINARY_NAME="pget"
+BINARY_NAME="pgit"
 INSTALL_DIR="$HOME/.local/bin"
 
 # Colors for output
@@ -147,7 +147,7 @@ update_path() {
         
         # Add to shell profile
         echo "" >> "$shell_profile"
-        echo "# Added by pget installer" >> "$shell_profile"
+        echo "# Added by pgit installer" >> "$shell_profile"
         echo "export PATH=\"$INSTALL_DIR:\$PATH\"" >> "$shell_profile"
         
         log_warning "Please restart your terminal or run: source $shell_profile"

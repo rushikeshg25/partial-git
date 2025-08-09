@@ -89,7 +89,6 @@ func (e *EnvironmentStorage) getShellProfilePath() (string, error) {
 	} else if strings.Contains(shell, "bash") {
 		profiles = []string{".bashrc", ".bash_profile", ".profile"}
 	} else {
-		// Default fallback
 		profiles = []string{".zshrc", ".bashrc", ".profile"}
 	}
 

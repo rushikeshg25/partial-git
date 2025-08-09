@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
-# Simple pget installer
+# Simple pgit installer
 # Usage: curl -fsSL https://raw.githubusercontent.com/rushikeshg25/partial-git/main/scripts/install-simple.sh | bash
 
 set -e
 
-REPO="rushikeshg25/partial-git"  # Replace with your GitHub username/repo
-BINARY_NAME="pget"
+REPO="rushikeshg25/partial-git" 
+BINARY_NAME="pgit"
 INSTALL_DIR="/usr/local/bin"
 
 # Detect OS and arch

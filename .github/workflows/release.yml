@@ -55,13 +55,13 @@ jobs:
           CGO_ENABLED: 0
         run: |
           mkdir -p dist
-          go build -ldflags="-s -w" -o dist/pget_${{ matrix.os }}_${{ matrix.arch }}${{ matrix.ext }} .
+          go build -ldflags="-s -w" -o dist/pgit_${{ matrix.os }}_${{ matrix.arch }}${{ matrix.ext }} .
 
       - name: Upload binary as artifact
         uses: actions/upload-artifact@v3
         with:
-          name: pget_${{ matrix.os }}_${{ matrix.arch }}
-          path: dist/pget_${{ matrix.os }}_${{ matrix.arch }}${{ matrix.ext }}
+          name: pgit_${{ matrix.os }}_${{ matrix.arch }}
+          path: dist/pgit_${{ matrix.os }}_${{ matrix.arch }}${{ matrix.ext }}
 
   release:
     name: Create Release
@@ -83,7 +83,7 @@ jobs:
       - name: Move files to release directory
         run: |
           mkdir -p release
-          find dist -name "pget_*" -type f -exec cp {} release/ \;
+          find dist -name "pgit_*" -type f -exec cp {} release/ \;
           ls -la release/
 
       - name: Create Release
