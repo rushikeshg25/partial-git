@@ -128,7 +128,7 @@ pgit https://github.com/facebook/react/blob/main/package.json`;
           <VideoPlaceholder
             title="See pgit in action"
             subtitle="Quick overview"
-            videoSrc="/demo.mp4"
+            videoSrc="https://f0oa7a8p9e.ufs.sh/f/eQuxgSdDgSaERDxXGSFmMSL93qEdla2vzV4F7NTsjgIoPGJ0"
           />
         </div>
       </section>
