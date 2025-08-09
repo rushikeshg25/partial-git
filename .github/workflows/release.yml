@@ -1,99 +1,97 @@
-name: Build and release pgit cli
+name: Release
 
 on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
+    name: Build and Release
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+
     strategy:
       matrix:
         include:
           - os: linux
             arch: amd64
+            goos: linux
+            goarch: amd64
           - os: linux
             arch: arm64
+            goos: linux
+            goarch: arm64
           - os: darwin
             arch: amd64
+            goos: darwin
+            goarch: amd64
           - os: darwin
             arch: arm64
+            goos: darwin
+            goarch: arm64
           - os: windows
             arch: amd64
-          - os: windows
-            arch: arm64
+            goos: windows
+            goarch: amd64
+            ext: .exe
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
         with:
-          fetch-depth: 0
+          go-version: "1.23"
 
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: "1.23.5"
-          cache: true
-
-      - name: Extract version from tag
-        id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-
-      - name: Build cross-platform binary
+      - name: Build binary
         env:
-          GOOS: ${{ matrix.os }}
-          GOARCH: ${{ matrix.arch }}
-          VERSION: ${{ steps.version.outputs.VERSION }}
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
         run: |
-          mkdir -p bin
-          binary_name="pgit"
-          if [ "${{ matrix.os }}" = "windows" ]; then
-            binary_name="pgit.exe"
-          fi
-          go build -ldflags "-X 'main.Version=${VERSION}'" -o "bin/${binary_name}" .
+          mkdir -p dist
+          go build -ldflags="-s -w" -o dist/pget_${{ matrix.os }}_${{ matrix.arch }}${{ matrix.ext }} .
 
-      - name: Archive binary
-        run: |
-          cd bin
-          binary_name="pgit"
-          archive_name="pgit-${{ steps.version.outputs.VERSION }}-${{ matrix.os }}-${{ matrix.arch }}"
-          
-          if [ "${{ matrix.os }}" = "windows" ]; then
-            binary_name="pgit.exe"
-            zip "../${archive_name}.zip" "${binary_name}"
-          else
-            tar -czf "../${archive_name}.tar.gz" "${binary_name}"
-          fi
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+      - name: Upload binary as artifact
+        uses: actions/upload-artifact@v3
         with:
-          name: pgit-${{ matrix.os }}-${{ matrix.arch }}
-          path: |
-            *.zip
-            *.tar.gz
+          name: pget_${{ matrix.os }}_${{ matrix.arch }}
+          path: dist/pget_${{ matrix.os }}_${{ matrix.arch }}${{ matrix.ext }}
 
   release:
-    needs: build
+    name: Create Release
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    needs: build
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v3
         with:
-          merge-multiple: true
+          path: dist
+
+      - name: Display structure of downloaded files
+        run: ls -R dist
+
+      - name: Move files to release directory
+        run: |
+          mkdir -p release
+          find dist -name "pget_*" -type f -exec cp {} release/ \;
+          ls -la release/
 
       - name: Create Release
-        uses: ncipollo/release-action@v1
+        uses: softprops/action-gh-release@v1
         with:
-          artifacts: "pgit-*"
-          tag: ${{ github.ref_name }}
-          name: "Release ${{ github.ref_name }}"
-          generateReleaseNotes: true
+          files: release/*
+          generate_release_notes: true
           draft: false
           prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
