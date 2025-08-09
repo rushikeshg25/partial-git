@@ -170,7 +170,7 @@ pgit https://github.com/facebook/react/blob/main/package.json`;
             id="install-heading"
             className="text-2xl font-semibold tracking-tight md:text-3xl"
           >
-            Install pgit
+            Installation
           </h2>
           <p className="mt-2 text-neutral-700 dark:text-neutral-200">
             Quick install is recommended. Copy one of the commands below.
