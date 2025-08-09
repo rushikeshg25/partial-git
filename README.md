@@ -2,6 +2,10 @@
 
 A fast, concurrent GitHub repository downloader that lets you download specific files, directories, or entire repositories without cloning the full git history.
 
+
+https://github.com/user-attachments/assets/d8c7862a-3f07-42ad-af70-3891f4326e4f
+
+
 ## Features
 
 - 🚀 **Fast concurrent downloads** using Go goroutines
