@@ -12,9 +12,24 @@ import (
 var f flags
 
 var rootCmd = &cobra.Command{
-	Use:   "pgit <github-url>",
-	Short: "Download files or folders from a repo",
-	Args:  cobra.ArbitraryArgs,
+	Use:   "pgit <github-url> | pgit [flags]",
+	Short: "Download files or folders from a GitHub repository",
+	Long: `pgit is a tool for downloading files or folders from GitHub repositories.
+
+Usage:
+  pgit <github-url>           Download from a GitHub repository
+  pgit --set <token>          Set GitHub Personal Access Token
+  pgit --auth                 Show authenticated user information
+  pgit --check                Check token status and rate limits
+  pgit --unset                Remove stored GitHub token
+
+Examples:
+  pgit https://github.com/owner/repo
+  pgit https://github.com/owner/repo/tree/main/src
+  pgit --set ghp_your_token_here
+  pgit --auth
+  pgit --check`,
+	Args: cobra.ArbitraryArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
 
