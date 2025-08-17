@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-const envVarName = "GITHUB_TOKEN"
+const envVarName = "PGIT_GITHUB_TOKEN"
 
 type EnvironmentStorage struct{}
 
@@ -131,7 +131,7 @@ func (e *EnvironmentStorage) addToShellProfile(token string) error {
 	}
 	defer file.Close()
 
-	_, err = file.WriteString(fmt.Sprintf("\n# GitHub token for pgit\n%s\n", exportLine))
+	_, err = file.WriteString(fmt.Sprintf("\n# PGIT GitHub token\n%s\n", exportLine))
 	if err != nil {
 		return fmt.Errorf("failed to write to shell profile: %w", err)
 	}
@@ -162,7 +162,7 @@ func (e *EnvironmentStorage) removeFromShellProfile() error {
 	for scanner.Scan() {
 		line := scanner.Text()
 
-		if strings.Contains(line, "# GitHub token for pgit") {
+		if strings.Contains(line, "# PGIT GitHub token") {
 			skipNext = true
 			continue
 		}

@@ -1,6 +1,6 @@
 APP_NAME:=pgit
-VERSION:=0.1.0
-LDFLAGS := -X 'main.Version=$(VERSION)'
+VERSION:=1.0.1
+LDFLAGS := -X 'partial-git/cmd.Version=$(VERSION)'
 
 .PHONY: build run clean install
 

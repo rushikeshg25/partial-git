@@ -17,7 +17,7 @@ type GitHubClient struct {
 func NewGitHubClient() *GitHubClient {
 	var client *github.Client
 
-	authToken := os.Getenv("GITHUB_TOKEN")
+	authToken := os.Getenv("PGIT_GITHUB_TOKEN")
 
 	if authToken == "" {
 		tokenManager := token.NewManager()

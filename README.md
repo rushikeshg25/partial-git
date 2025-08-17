@@ -104,7 +104,7 @@ pgit https://github.com/vercel/next.js/blob/canary/packages/next/package.json
 
 ### Environment Variables
 
-- `GITHUB_TOKEN` - Your GitHub Personal Access Token (optional)
+- `PGIT_GITHUB_TOKEN` - Your GitHub Personal Access Token (optional)
 
 ### Token Storage
 
